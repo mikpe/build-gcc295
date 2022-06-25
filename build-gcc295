@@ -1,0 +1,170 @@
+#!/bin/sh
+#
+# build-gcc295 - a tool for building a 32-bit gcc-2.95.3 on x86_64-linux
+# Copyright (C) 2022  Mikael Pettersson
+#
+# Partially based on buildcross:
+# Copyright (C) 2019-2022  Mikael Pettersson
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Usage: build-gcc295 [<DEST_DIR>]
+
+set -e
+
+VERSION="1.0"
+
+BUILD_DIR=`realpath .`
+DOWNLOADS_DIR=`realpath ./downloads`
+SOURCES_DIR=`realpath ./sources`
+
+DEST_DIR=${2:-"${BUILD_DIR}/gcc-2.95.3"}
+
+# version of gcc-2.95.3's private binutils
+BINUTILS_VSN=2.38
+
+log() {
+    echo
+    echo "@ $1"
+    echo
+}
+
+DISTFILES="https://mirrors.kernel.org/gentoo/distfiles"
+
+get_tarball() {
+    local EXT=${2:-"xz"}
+    if [ ! \( -f "$1.tar.xz" -o -f "$1.tar.bz2" -o -f "$1.tar.gz" \) ]; then
+	wget "${URL}/$1.tar.${EXT}" || :
+	if [ ! -f "$1.tar.${EXT}" ]; then
+	    exit 1
+	fi
+    fi
+}
+
+get_source() {
+    local PREFIX="$1"
+    local VSN="$2"
+    local EXT="$3"
+    get_tarball "${PREFIX}${VSN}" "${EXT}"
+}
+
+get_sources() {
+    log "getting sources"
+    cd "${DOWNLOADS_DIR}"
+    get_source "binutils-" "${BINUTILS_VSN}"
+    get_source "gcc-" "2.95.3" "bz2"
+    cd -
+}
+
+unpack_tarball() {
+    if [ ! -d "${SOURCES_DIR}/$1" ]; then
+	if [ -f "${DOWNLOADS_DIR}/$1.tar.xz" ]; then
+	    tar -C "${SOURCES_DIR}" -xf "${DOWNLOADS_DIR}/$1.tar.xz"
+	elif [ -f "${DOWNLOADS_DIR}/$1.tar.bz2" ]; then
+	    tar -C "${SOURCES_DIR}" -xf "${DOWNLOADS_DIR}/$1.tar.bz2"
+	else
+	    tar -C "${SOURCES_DIR}" -xf "${DOWNLOADS_DIR}/$1.tar.gz"
+	fi
+    fi
+}
+
+unpack_source() {
+    local PREFIX="$1"
+    local VSN="$2"
+    unpack_tarball "${PREFIX}${VSN}"
+    echo "${SOURCES_DIR}/${PREFIX}${VSN}"
+}
+
+build_i686_binutils() {
+    local SOURCE_PATH
+    if [ -x "${DEST_DIR}/usr/bin/as" ]; then
+	return
+    fi
+    log "building binutils ${BINUTILS_VSN}"
+    SOURCE_PATH=`unpack_source "binutils-" "${BINUTILS_VSN}"`
+    rm -rf objdir-binutils
+    mkdir objdir-binutils
+    cd objdir-binutils
+    CFLAGS="-m32" ${SOURCE_PATH}/configure \
+		--build="i686-pc-linux-gnu" \
+		--prefix="${DEST_DIR}/usr" \
+		--disable-gold \
+		--disable-nls \
+		--disable-plugins
+    make MAKEINFO=/bin/true
+    make MAKEINFO=/bin/true install
+    cd ..
+    rm -rf objdir-binutils
+}
+
+build_wrapper_script() {
+    rm -rf objdir-wrapper
+    mkdir objdir-wrapper
+    cat > objdir-wrapper/gcc32 <<'EOF'
+    #!/bin/sh
+    exec gcc -m32 -fgnu89-inline "$@"
+EOF
+    chmod +x objdir-wrapper/gcc32
+}
+
+build_i686_gcc295() {
+    local SOURCE_PATH
+    log "building gcc 2.95.3"
+    SOURCE_PATH=`unpack_source "gcc-" "2.95.3"`
+    rm -rf objdir-gcc
+    mkdir objdir-gcc
+    cd objdir-gcc
+    CC="${BUILD_DIR}/objdir-wrapper/gcc32" ${SOURCE_PATH}/configure \
+		--host="i686-pc-linux-gnu" \
+		--prefix="${DEST_DIR}" \
+		--with-gnu-as \
+		--with-as="${DEST_DIR}/usr/bin/as" \
+		--with-gnu-ld \
+		--with-ld="${DEST_DIR}/usr/bin/ld" \
+		--disable-nls \
+		--disable-shared
+    make MAKEINFO=/bin/true LANGUAGES=c bootstrap
+    make MAKEINFO=/bin/true LANGUAGES=c install
+    cd ..
+    rm -rf objdir-gcc
+}
+
+log "build-gcc295 ${VERSION} building toolchain in ${DEST_DIR}"
+
+HOST_TRIPLE=`gcc -v 2>&1 | grep '^Target:' | awk '{print $2}'`
+case "${HOST_TRIPLE}" in
+    x86_64-pc-linux-gnu)
+	;;
+    *)
+	echo "unsupported host: ${HOST_TRIPLE}"
+	exit 1
+        ;;
+esac
+
+if [ ! -d "${DOWNLOADS_DIR}" ]; then
+    mkdir -p "${DOWNLOADS_DIR}"
+fi
+if [ ! -d "${SOURCES_DIR}" ]; then
+    mkdir -p "${SOURCES_DIR}"
+fi
+get_sources
+
+cd ${BUILD_DIR}
+
+build_i686_binutils
+build_wrapper_script
+build_i686_gcc295
+rm -rf objdir-wrapper
+
+log "done"
