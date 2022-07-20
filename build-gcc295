@@ -23,13 +23,13 @@
 
 set -e
 
-VERSION="1.0"
+VERSION="1.1"
 
 BUILD_DIR=`realpath .`
 DOWNLOADS_DIR=`realpath ./downloads`
 SOURCES_DIR=`realpath ./sources`
 
-DEST_DIR=${2:-"${BUILD_DIR}/gcc-2.95.3"}
+DEST_DIR=${1:-"${BUILD_DIR}/gcc-2.95.3"}
 
 # version of gcc-2.95.3's private binutils
 BINUTILS_VSN=2.38
@@ -44,6 +44,7 @@ DISTFILES="https://mirrors.kernel.org/gentoo/distfiles"
 
 get_tarball() {
     local EXT=${2:-"xz"}
+    local URL=${3:-"${DISTFILES}"}
     if [ ! \( -f "$1.tar.xz" -o -f "$1.tar.bz2" -o -f "$1.tar.gz" \) ]; then
 	wget "${URL}/$1.tar.${EXT}" || :
 	if [ ! -f "$1.tar.${EXT}" ]; then
