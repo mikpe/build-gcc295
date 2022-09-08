@@ -101,6 +101,8 @@ build_i686_binutils() {
 		--build="i686-pc-linux-gnu" \
 		--prefix="${DEST_DIR}/usr" \
 		--disable-gold \
+		--disable-gprofng \
+		--disable-libctf \
 		--disable-nls \
 		--disable-plugins
     make MAKEINFO=/bin/true
