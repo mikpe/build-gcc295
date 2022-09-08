@@ -145,7 +145,7 @@ log "build-gcc295 ${VERSION} building toolchain in ${DEST_DIR}"
 
 HOST_TRIPLE=`gcc -v 2>&1 | grep '^Target:' | awk '{print $2}'`
 case "${HOST_TRIPLE}" in
-    x86_64-pc-linux-gnu)
+    x86_64-*-linux*)
 	;;
     *)
 	echo "unsupported host: ${HOST_TRIPLE}"
