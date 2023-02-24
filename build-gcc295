@@ -1,10 +1,10 @@
 #!/bin/sh
 #
 # build-gcc295 - a tool for building a 32-bit gcc-2.95.3 on x86_64-linux
-# Copyright (C) 2022  Mikael Pettersson
+# Copyright (C) 2022-2023  Mikael Pettersson
 #
 # Partially based on buildcross:
-# Copyright (C) 2019-2022  Mikael Pettersson
+# Copyright (C) 2019-2023  Mikael Pettersson
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 
 set -e
 
-VERSION="1.2"
+VERSION="1.3"
 
 BUILD_DIR=`realpath .`
 DOWNLOADS_DIR=`realpath ./downloads`
@@ -32,7 +32,7 @@ SOURCES_DIR=`realpath ./sources`
 DEST_DIR=${1:-"${BUILD_DIR}/gcc-2.95.3"}
 
 # version of gcc-2.95.3's private binutils
-BINUTILS_VSN=2.39
+BINUTILS_VSN=2.40
 
 log() {
     echo
