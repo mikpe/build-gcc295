@@ -1,10 +1,10 @@
 #!/bin/sh
 #
 # build-gcc295 - a tool for building a 32-bit gcc-2.95.3 on x86_64-linux
-# Copyright (C) 2022-2023  Mikael Pettersson
+# Copyright (C) 2022-2025  Mikael Pettersson
 #
 # Partially based on buildcross:
-# Copyright (C) 2019-2023  Mikael Pettersson
+# Copyright (C) 2019-2025  Mikael Pettersson
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 
 set -e
 
-VERSION="1.4"
+VERSION="1.5"
 
 BUILD_DIR=`realpath .`
 DOWNLOADS_DIR=`realpath ./downloads`
@@ -31,8 +31,12 @@ SOURCES_DIR=`realpath ./sources`
 
 DEST_DIR=${1:-"${BUILD_DIR}/gcc-2.95.3"}
 
+# URLs for the component tarballs
+BINUTILS_URL="https://mirrorservice.org/sites/sourceware.org/pub/binutils/releases/"
+GCC_URL="https://mirrorservice.org/sites/sourceware.org/pub/gcc/old-releases/gcc-2/"
+
 # version of gcc-2.95.3's private binutils
-BINUTILS_VSN=2.41
+BINUTILS_VSN=2.43.1
 
 log() {
     echo
@@ -40,31 +44,23 @@ log() {
     echo
 }
 
-DISTFILES="https://mirrors.kernel.org/gentoo/distfiles"
-
 get_tarball() {
-    local EXT=${2:-"xz"}
-    local URL=${3:-"${DISTFILES}"}
-    if [ ! \( -f "$1.tar.xz" -o -f "$1.tar.bz2" -o -f "$1.tar.gz" \) ]; then
-	wget "${URL}/$1.tar.${EXT}" || :
-	if [ ! -f "$1.tar.${EXT}" ]; then
+    local URL="$1"
+    local FILE="$2"
+    local EXT=${3:-"xz"}
+    if [ ! \( -f "${FILE}.tar.xz" -o -f "${FILE}.tar.bz2" -o -f "${FILE}.tar.gz" \) ]; then
+	wget "${URL}/${FILE}.tar.${EXT}" || :
+	if [ ! -f "${FILE}.tar.${EXT}" ]; then
 	    exit 1
 	fi
     fi
 }
 
-get_source() {
-    local PREFIX="$1"
-    local VSN="$2"
-    local EXT="$3"
-    get_tarball "${PREFIX}${VSN}" "${EXT}"
-}
-
 get_sources() {
     log "getting sources"
     cd "${DOWNLOADS_DIR}"
-    get_source "binutils-" "${BINUTILS_VSN}"
-    get_source "gcc-" "2.95.3" "bz2"
+    get_tarball "${BINUTILS_URL}" "binutils-${BINUTILS_VSN}"
+    get_tarball "${GCC_URL}" "gcc-2.95.3" "bz2"
     cd -
 }
 
