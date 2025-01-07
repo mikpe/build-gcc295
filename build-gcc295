@@ -23,7 +23,7 @@
 
 set -e
 
-VERSION="1.5"
+VERSION="1.6"
 
 BUILD_DIR=`realpath .`
 DOWNLOADS_DIR=`realpath ./downloads`
@@ -112,7 +112,7 @@ build_wrapper_script() {
     mkdir objdir-wrapper
     cat > objdir-wrapper/gcc32 <<'EOF'
     #!/bin/sh
-    exec gcc -m32 -fgnu89-inline "$@"
+    exec gcc -m32 -fgnu89-inline -std=gnu89 "$@"
 EOF
     chmod +x objdir-wrapper/gcc32
 }
