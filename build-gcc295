@@ -23,7 +23,7 @@
 
 set -e
 
-VERSION="1.7"
+VERSION="1.8"
 
 BUILD_DIR=`realpath .`
 DOWNLOADS_DIR=`realpath ./downloads`
@@ -36,7 +36,7 @@ BINUTILS_URL="https://mirrorservice.org/sites/sourceware.org/pub/binutils/releas
 GCC_URL="https://mirrorservice.org/sites/sourceware.org/pub/gcc/old-releases/gcc-2/"
 
 # version of gcc-2.95.3's private binutils
-BINUTILS_VSN=2.45.1
+BINUTILS_VSN=2.46.0
 
 log() {
     echo
